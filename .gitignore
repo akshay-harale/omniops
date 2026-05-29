@@ -1,0 +1,77 @@
+# Root .gitignore for OmniOps project
+
+# Log files and database runtime storage
+*.log
+.shared/
+shared/
+shared-logs/
+data/
+db_data/
+
+# OS/System files
+.DS_Store
+Thumbs.db
+
+# IDEs and Editors
+.idea/
+*.iml
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+.nbproject/
+
+# ==========================================
+# Java / Spring Boot Backend exclusions
+# ==========================================
+backend/.gradle/
+backend/build/
+backend/out/
+backend/bin/
+backend/*.log
+backend/target/
+backend/.settings/
+backend/.classpath
+backend/.project
+
+# Gradle files
+backend/.gradle-home/
+backend/buildSrc/build/
+backend/gradle-app.setting
+
+# ==========================================
+# Node.js Frontend exclusions
+# ==========================================
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnp/
+frontend/.pnp.js
+
+# Local environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.env.*
+
+# ==========================================
+# Python AI Worker exclusions
+# ==========================================
+ai-worker/__pycache__/
+ai-worker/*.py[cod]
+ai-worker/*$py.class
+ai-worker/.pytest_cache/
+ai-worker/.venv/
+ai-worker/venv/
+ai-worker/env/
+ai-worker/.env
+ai-worker/pip-log.txt
+ai-worker/pip-delete-this-directory.txt

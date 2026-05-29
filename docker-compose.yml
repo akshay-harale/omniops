@@ -1,0 +1,77 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: omniops-db
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    container_name: omniops-redis
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    container_name: omniops-backend
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - LOG_GENERATOR_PATH=/shared/sample-application.log
+      - DEPLOYMENT_MODE=${DEPLOYMENT_MODE:-demo}
+    ports:
+      - "8080:8080"
+    volumes:
+      - shared-logs:/shared
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  ai-worker:
+    build: ./ai-worker
+    container_name: omniops-ai-worker
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DEPLOYMENT_MODE=${DEPLOYMENT_MODE:-demo}
+    volumes:
+      - shared-logs:/shared
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    container_name: omniops-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  shared-logs:
