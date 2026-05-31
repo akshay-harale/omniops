@@ -630,7 +630,7 @@ export default function IntegrationsTab({
               <label className="form-label">Model Name</label>
               <select 
                 value={anthropicModel} 
-                onChange={(e) => setOpenaiModel(e.target.value)}
+                onChange={(e) => setAnthropicModel(e.target.value)}
                 className="form-input"
                 style={{ background: '#0a0d17', color: 'white' }}
               >

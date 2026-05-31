@@ -9,6 +9,15 @@ import OnboardingModal from './components/OnboardingModal';
 
 const DEFAULT_TENANT_ID = "00000000-0000-0000-0000-000000000001";
 
+const safeAtob = (str) => {
+  if (!str) return '';
+  try {
+    return atob(str);
+  } catch (e) {
+    return str;
+  }
+};
+
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('omniops_token') || '');
   const [tenantId, setTenantId] = useState(DEFAULT_TENANT_ID);
@@ -248,11 +257,11 @@ export default function App() {
         setIntegrations(data);
         const dd = data.find(i => i.serviceType === 'DATADOG');
         const tm = data.find(i => i.serviceType === 'TEAMS');
-        setTeamsWebhook(tm ? atob(tm.encryptedApiKey) : '');
+        setTeamsWebhook(tm ? safeAtob(tm.encryptedApiKey) : '');
         
         if (dd) {
           try {
-            const decoded = atob(dd.encryptedApiKey);
+            const decoded = safeAtob(dd.encryptedApiKey);
             const parsed = JSON.parse(decoded);
             if (parsed.enabled !== undefined) setDdEnabled(parsed.enabled);
             if (parsed.apiKey) setDdApiKey(parsed.apiKey);
@@ -267,14 +276,14 @@ export default function App() {
             if (parsed.timeWindowMinutes) setDdTimeWindow(parsed.timeWindowMinutes);
             if (parsed.maxLogLines) setDdMaxLogLines(parsed.maxLogLines);
           } catch (e) {
-            setDdApiKey(atob(dd.encryptedApiKey));
+            setDdApiKey(safeAtob(dd.encryptedApiKey));
           }
         }
         
         const sn = data.find(i => i.serviceType === 'SIGNOZ');
         if (sn) {
           try {
-            const decoded = atob(sn.encryptedApiKey);
+            const decoded = safeAtob(sn.encryptedApiKey);
             const parsed = JSON.parse(decoded);
             if (parsed.enabled !== undefined) setSignozEnabled(parsed.enabled);
             if (parsed.host) setSignozHost(parsed.host);
@@ -289,7 +298,7 @@ export default function App() {
         const llmConfigInteg = data.find(i => i.serviceType === 'LLM_CONFIG');
         if (llmConfigInteg) {
           try {
-            const decoded = atob(llmConfigInteg.encryptedApiKey);
+            const decoded = safeAtob(llmConfigInteg.encryptedApiKey);
             const parsed = JSON.parse(decoded);
             if (parsed.provider) setLlmProvider(parsed.provider);
             if (parsed.ollamaEndpoint) setOllamaEndpoint(parsed.ollamaEndpoint);
