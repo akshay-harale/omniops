@@ -29,8 +29,8 @@ public class AuthFilter implements Filter {
             return;
         }
 
-        // 2. Allow OAuth token endpoints and webhook ingestion endpoints to bypass auth
-        if (path.contains("/oauth/token") || path.startsWith("/api/webhooks/")) {
+        // 2. Allow OAuth token endpoints, webhook ingestion, and internal context endpoints to bypass auth
+        if (path.contains("/oauth/token") || path.startsWith("/api/webhooks/") || path.startsWith("/api/context/")) {
             chain.doFilter(request, response);
             return;
         }

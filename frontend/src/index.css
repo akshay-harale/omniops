@@ -289,6 +289,7 @@ h1, h2, h3, h4, h5, h6 {
   flex-direction: column;
   height: calc(100vh - 350px);
   min-height: 480px;
+  min-width: 0;
 }
 
 .audit-detail-wrapper {
@@ -318,6 +319,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 16px;
   overflow-y: auto;
   border-right: 1px solid var(--border-glass);
+  min-width: 0;
 }
 
 .audit-split-right {
@@ -325,6 +327,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 16px;
   overflow-y: auto;
   background: rgba(3, 5, 10, 0.4);
+  min-width: 0;
 }
 
 /* --- Forms & Buttons --- */

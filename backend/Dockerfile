@@ -6,7 +6,7 @@ RUN gradle build --no-daemon -x test
 
 # Package stage
 FROM eclipse-temurin:17-jre-alpine
-EXPOSE 8080
+EXPOSE 8081
 RUN mkdir /app
 COPY --from=build /home/gradle/src/build/libs/*-SNAPSHOT.jar /app/spring-boot-application.jar
 ENTRYPOINT ["java", "-jar", "/app/spring-boot-application.jar"]

@@ -51,7 +51,7 @@ The workflow operates as follows:
 graph TD
     FE[React Frontend :3000] -->|1. Exchange Credentials| Auth[/oauth/token/]
     Auth -->|2. Return access_token| FE
-    FE -->|3. Poll Live Logs| SB[Spring Boot Backend :8080]
+    FE -->|3. Poll Live Logs| SB[Spring Boot Backend :8081]
     SB -->|4. Read last log lines| LFile[/shared/sample-application.log/]
     
     SIM[UI Alert Simulator] -->|5. Ingest Alert| WebhookController[/api/webhooks/datadog/{id}/]
@@ -69,11 +69,11 @@ graph TD
 
 ```text
 d:\codebase\omniops\
-├── init.sql                     # Postgres schema setup & seed data
 ├── docker-compose.yml           # Orchestrator with shared volumes mapping
 ├── backend/                     # Spring Boot app folder
 │   ├── build.gradle             # Build specifications
 │   ├── Dockerfile               # Multi-stage Gradle build script
+│   └── src/main/resources/db/migration/V1__init.sql # Flyway migration script
 │   └── src/main/java/.../
 │       ├── config/AuthFilter    # Auth request interceptor
 │       ├── controller/          # REST endpoints (Webhook, Auth, Onboarding, Triage)
@@ -95,7 +95,7 @@ d:\codebase\omniops\
 ## 🚀 Port & Volume Configurations
 
 * **Frontend**: [http://localhost:3000](http://localhost:3000) (Vite server)
-* **Backend**: [http://localhost:8080](http://localhost:8080) (Tomcat server)
+* **Backend**: [http://localhost:8081](http://localhost:8081) (Tomcat server)
 * **PostgreSQL**: `localhost:5432` (Credentials: `postgres` / `postgres`)
 * **Redis**: `localhost:6379`
 * **Shared Storage**: Volume named `shared-logs` mapped to `/shared` in the `backend` and `ai-worker` containers, containing the shared file `sample-application.log`.

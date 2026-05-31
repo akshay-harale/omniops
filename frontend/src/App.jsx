@@ -54,7 +54,8 @@ export default function App() {
   const [teamsWebhook, setTeamsWebhook] = useState('');
   const [integrationStatus, setIntegrationStatus] = useState('');
   
-  // Datadog Rich Config State
+  // Datadog Config State
+  const [ddEnabled, setDdEnabled] = useState(false);
   const [ddApiKey, setDdApiKey] = useState('');
   const [ddAppKey, setDdAppKey] = useState('');
   const [ddSite, setDdSite] = useState('datadoghq.com');
@@ -66,6 +67,15 @@ export default function App() {
   const [ddLogQuery, setDdLogQuery] = useState('service:{{service}} env:{{env}} status:error');
   const [ddTimeWindow, setDdTimeWindow] = useState(30);
   const [ddMaxLogLines, setDdMaxLogLines] = useState(50);
+  
+  // SigNoz Config State
+  const [signozEnabled, setSignozEnabled] = useState(true);
+  const [signozHost, setSignozHost] = useState('http://host.docker.internal:8080');
+  const [signozToken, setSignozToken] = useState('');
+  const [signozEnvironment, setSignozEnvironment] = useState('production');
+  const [signozLogFetchEnabled, setSignozLogFetchEnabled] = useState(true);
+  const [testingSignoz, setTestingSignoz] = useState(false);
+  const [signozTestResult, setSignozTestResult] = useState({ success: null, message: '' });
   
   // Datadog connection testing
   const [testingDatadog, setTestingDatadog] = useState(false);
@@ -244,6 +254,7 @@ export default function App() {
           try {
             const decoded = atob(dd.encryptedApiKey);
             const parsed = JSON.parse(decoded);
+            if (parsed.enabled !== undefined) setDdEnabled(parsed.enabled);
             if (parsed.apiKey) setDdApiKey(parsed.apiKey);
             if (parsed.applicationKey) setDdAppKey(parsed.applicationKey);
             if (parsed.site) setDdSite(parsed.site);
@@ -257,6 +268,21 @@ export default function App() {
             if (parsed.maxLogLines) setDdMaxLogLines(parsed.maxLogLines);
           } catch (e) {
             setDdApiKey(atob(dd.encryptedApiKey));
+          }
+        }
+        
+        const sn = data.find(i => i.serviceType === 'SIGNOZ');
+        if (sn) {
+          try {
+            const decoded = atob(sn.encryptedApiKey);
+            const parsed = JSON.parse(decoded);
+            if (parsed.enabled !== undefined) setSignozEnabled(parsed.enabled);
+            if (parsed.host) setSignozHost(parsed.host);
+            if (parsed.token) setSignozToken(parsed.token);
+            if (parsed.environment) setSignozEnvironment(parsed.environment);
+            if (parsed.logFetchEnabled !== undefined) setSignozLogFetchEnabled(parsed.logFetchEnabled);
+          } catch (e) {
+            console.error("Error parsing SigNoz Config:", e);
           }
         }
         
@@ -373,6 +399,7 @@ export default function App() {
   // Save Datadog Rich Config as JSON
   const saveDatadogConfig = () => {
     const config = {
+      enabled: ddEnabled,
       apiKey: ddApiKey,
       applicationKey: ddAppKey,
       site: ddSite,
@@ -386,6 +413,18 @@ export default function App() {
       maxLogLines: ddMaxLogLines
     };
     saveIntegration('DATADOG', JSON.stringify(config));
+  };
+
+  // Save SigNoz Config as JSON
+  const saveSignozConfig = () => {
+    const config = {
+      enabled: signozEnabled,
+      host: signozHost,
+      token: signozToken,
+      environment: signozEnvironment,
+      logFetchEnabled: signozLogFetchEnabled
+    };
+    saveIntegration('SIGNOZ', JSON.stringify(config));
   };
 
   // Test Datadog Connection
@@ -411,6 +450,30 @@ export default function App() {
       .catch(err => {
         setTestingDatadog(false);
         setDdTestResult({ success: false, message: 'Network error testing Datadog connection.' });
+      });
+  };
+
+  // Test SigNoz Connection
+  const testSignozConnection = () => {
+    setTestingSignoz(true);
+    setSignozTestResult({ success: null, message: '' });
+    
+    fetchWithAuth('/api/onboarding/test-connection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        serviceType: 'SIGNOZ',
+        apiKey: signozHost
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        setTestingSignoz(false);
+        setSignozTestResult({ success: data.success, message: data.message });
+      })
+      .catch(err => {
+        setTestingSignoz(false);
+        setSignozTestResult({ success: false, message: 'Network error testing SigNoz connection.' });
       });
   };
 
@@ -928,6 +991,8 @@ export default function App() {
               setDdApiKey={setDdApiKey}
               ddAppKey={ddAppKey}
               setDdAppKey={setDdAppKey}
+              ddEnabled={ddEnabled}
+              setDdEnabled={setDdEnabled}
               ddSite={ddSite}
               setDdSite={setDdSite}
               testingDatadog={testingDatadog}
@@ -950,6 +1015,20 @@ export default function App() {
               ddMaxLogLines={ddMaxLogLines}
               setDdMaxLogLines={setDdMaxLogLines}
               saveDatadogConfig={saveDatadogConfig}
+              signozEnabled={signozEnabled}
+              setSignozEnabled={setSignozEnabled}
+              signozHost={signozHost}
+              setSignozHost={setSignozHost}
+              signozToken={signozToken}
+              setSignozToken={setSignozToken}
+              signozEnvironment={signozEnvironment}
+              setSignozEnvironment={setSignozEnvironment}
+              signozLogFetchEnabled={signozLogFetchEnabled}
+              setSignozLogFetchEnabled={setSignozLogFetchEnabled}
+              testingSignoz={testingSignoz}
+              testSignozConnection={testSignozConnection}
+              signozTestResult={signozTestResult}
+              saveSignozConfig={saveSignozConfig}
               teamsWebhook={teamsWebhook}
               setTeamsWebhook={setTeamsWebhook}
               saveIntegration={saveIntegration}

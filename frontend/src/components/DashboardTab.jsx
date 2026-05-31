@@ -155,7 +155,7 @@ export default function DashboardTab({
                     <Terminal style={{ width: '14px', height: '14px', color: 'var(--color-primary-light)' }} />
                     Ingested Webhook Payload
                   </h4>
-                  <pre className="font-mono text-xs" style={{ background: '#02040a', border: '1px solid rgba(255,255,255,0.05)', padding: '12px', borderRadius: '8px', color: '#38bdf8', overflowX: 'auto', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                  <pre className="font-mono text-xs" style={{ background: '#02040a', border: '1px solid rgba(255,255,255,0.05)', padding: '12px', borderRadius: '8px', color: '#38bdf8', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: '1.5' }}>
                     {typeof selectedIncident.payload === 'string' 
                       ? JSON.stringify(JSON.parse(selectedIncident.payload), null, 2)
                       : JSON.stringify(selectedIncident.payload, null, 2)

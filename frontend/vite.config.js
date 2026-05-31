@@ -6,14 +6,17 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
+    hmr: {
+      clientPort: 80,
+    },
     proxy: {
       '/api': {
-        target: 'http://backend:8080',
+        target: 'http://backend:8081',
         changeOrigin: true,
         secure: false,
       },
       '/oauth': {
-        target: 'http://backend:8080',
+        target: 'http://backend:8081',
         changeOrigin: true,
         secure: false,
       }

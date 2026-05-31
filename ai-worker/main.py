@@ -334,37 +334,28 @@ def run_real_triage(incident_id, payload, llm_config):
     reasoning_steps.append(f"Node [Extract Entities]: Ingested alert payload for service '{service}'. Event: '{alert_title}'.")
     
     # Node 2: Retrieve context / logs
-    shared_log_path = "/shared/sample-application.log"
-    logs_appended = False
+    reasoning_steps.append(f"Node [Fetch Context]: Requesting log context from backend API for incident {incident_id}...")
     
-    # Inject the crash log directly into the shared file first, so it appears in the live stream UI!
-    crash_log = MOCK_LOGS_LIBRARY[alert_type]
-    if os.path.exists(shared_log_path):
-        try:
-            with open(shared_log_path, "a") as lf:
-                lf.write(f"\n--- CRITICAL ALERT DETECTED ---\n")
-                lf.write(crash_log.strip() + "\n")
-                lf.write(f"---------------------------------\n")
-            logs_appended = True
-            print(f"[Worker] Appended crash trace for {alert_type} to shared log file.")
-        except Exception as e:
-            print(f"[Worker] Failed to write crash log to shared file: {e}")
+    logs_context = ""
+    try:
+        context_response = requests.get(f"http://backend:8081/api/context/incident/{incident_id}", timeout=10)
+        if context_response.status_code == 200:
+            context_map = context_response.json()
+            if "SIGNOZ" in context_map:
+                logs_context = context_map["SIGNOZ"]
+                reasoning_steps.append(f"Node [Fetch Context]: Retrieved SigNoz logs.")
+            else:
+                reasoning_steps.append(f"Node [Fetch Context]: No SigNoz context returned.")
+        else:
+            reasoning_steps.append(f"Node [Fetch Context]: Failed to fetch context. Status: {context_response.status_code}")
+    except Exception as e:
+        print(f"[Worker] Failed to fetch context from Java backend: {e}")
+        reasoning_steps.append(f"Node [Fetch Context]: Error requesting context: {e}")
 
-    # Read logs from shared volume
-    live_logs = ""
-    if os.path.exists(shared_log_path):
-        try:
-            with open(shared_log_path, "r") as f:
-                lines = f.readlines()
-                # Read last 35 lines to include the newly appended stack trace and preceding context
-                selected_lines = lines[-35:] if len(lines) > 35 else lines
-                live_logs = "".join(selected_lines)
-            reasoning_steps.append(f"Node [Fetch Context]: Connected to application log stream at {shared_log_path}.")
-        except Exception as e:
-            print(f"[Worker] Failed to read from shared log: {e}")
+    if not logs_context:
+        logs_context = "No log context could be retrieved from the integrations."
 
-    logs_context = live_logs if live_logs else crash_log
-    reasoning_steps.append(f"Node [Fetch Context]: Found log details matching failure fingerprint:\n---\n{logs_context.strip()[:300]}...\n---")
+    reasoning_steps.append(f"Node [Fetch Context]: Extracted context:\n---\n{logs_context.strip()[:500]}...\n---")
 
     # Node 3: AI analysis
     provider = llm_config.get("provider", "OLLAMA")
@@ -392,8 +383,9 @@ def run_real_triage(incident_id, payload, llm_config):
     scope_str = payload.get("alert_scope", "") if isinstance(payload, dict) else ""
     infra_tags = parse_alert_scope(scope_str)
     
-    # Also try to pull context from the Datadog integration config
+    # Also try to pull context from the Datadog and SigNoz integration config
     dd_config = llm_config.get("_datadog_config", {})
+    signoz_config = llm_config.get("_signoz_config", {})
     
     cluster = infra_tags.get("kube_cluster", dd_config.get("clusterName", ""))
     namespace = infra_tags.get("kube_namespace", "")
@@ -595,6 +587,7 @@ def main():
             teams_webhook = integrations.get("TEAMS", None)
             llm_config_str = integrations.get("LLM_CONFIG", None)
             dd_config_str = integrations.get("DATADOG", None)
+            signoz_config_str = integrations.get("SIGNOZ", None)
             
             llm_config = None
             if llm_config_str:
@@ -607,8 +600,18 @@ def main():
             dd_config = parse_datadog_config(dd_config_str)
             if llm_config and dd_config:
                 llm_config["_datadog_config"] = dd_config
+                
+            # Parse SigNoz config and attach to llm_config
+            signoz_config = {}
+            if signoz_config_str:
+                try:
+                    signoz_config = json.loads(signoz_config_str)
+                    if llm_config:
+                        llm_config["_signoz_config"] = signoz_config
+                except Exception as e:
+                    print(f"[Worker] Failed to parse SIGNOZ config: {e}")
             
-            print(f"[Worker] Deployment mode: {DEPLOYMENT_MODE} | LLM config: {'found' if llm_config else 'missing'} | DD config: {'found' if dd_config else 'missing'}")
+            print(f"[Worker] Deployment mode: {DEPLOYMENT_MODE} | LLM config: {'found' if llm_config else 'missing'} | DD config: {'found' if dd_config else 'missing'} | SigNoz config: {'found' if signoz_config else 'missing'}")
 
             # Check if agent is explicitly disabled
             if llm_config and not llm_config.get("agentEnabled", True):

@@ -174,6 +174,49 @@ public class OnboardingController {
             }
         }
 
+        if ("SIGNOZ".equals(request.getServiceType())) {
+            String hostUrl = request.getApiKey() != null ? request.getApiKey().trim() : "";
+            
+            if (hostUrl.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "SigNoz Host URL is required.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            if (!hostUrl.startsWith("http")) {
+                response.put("success", false);
+                response.put("message", "SigNoz Host URL must start with http or https.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            try {
+                // SigNoz healthcheck endpoint: /api/v1/health
+                String healthUrl = hostUrl.replaceAll("/+$", "") + "/api/v1/health";
+                HttpClient client = HttpClient.newBuilder()
+                        .connectTimeout(Duration.ofSeconds(5))
+                        .build();
+                HttpRequest req = HttpRequest.newBuilder()
+                        .uri(URI.create(healthUrl))
+                        .timeout(Duration.ofSeconds(5))
+                        .GET()
+                        .build();
+                HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+                
+                if (resp.statusCode() >= 200 && resp.statusCode() < 300) {
+                    response.put("success", true);
+                    response.put("message", "SigNoz connection validated successfully!");
+                    return ResponseEntity.ok(response);
+                } else {
+                    response.put("success", false);
+                    response.put("message", "SigNoz returned status " + resp.statusCode() + ".");
+                    return ResponseEntity.ok(response);
+                }
+            } catch (Exception e) {
+                response.put("success", false);
+                response.put("message", "Could not reach SigNoz Host at " + hostUrl + ": " + e.getMessage());
+                return ResponseEntity.ok(response);
+            }
+        }
+
         response.put("success", true);
         response.put("message", "Connection established successfully with " + request.getServiceType() + " gateway!");
         response.put("latencyMs", 185);

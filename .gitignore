@@ -75,3 +75,5 @@ ai-worker/env/
 ai-worker/.env
 ai-worker/pip-log.txt
 ai-worker/pip-delete-this-directory.txt
+
+signoz
