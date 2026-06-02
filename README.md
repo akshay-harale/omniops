@@ -2,6 +2,7 @@
 
 OmniOps is a self-hosted AI-driven incident triage platform. It acts as an automated member of your on-call team—intercepting alerts from monitoring platforms (like SigNoz or Datadog), dynamically fetching relevant logs and exception stacktraces via integration APIs, running them through local LLM reasoning loops, and outputting actionable root-cause diagnoses.
 
+Demo
 ![OmniOps Demo Walkthrough](demo_1.gif)
 
 ---
