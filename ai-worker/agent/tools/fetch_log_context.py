@@ -27,11 +27,16 @@ def fetch_log_context(incident_id: str) -> str:
         A string containing the aggregated log context, or a message
         indicating no context was available.
     """
+    import time
+    start_time = time.time()
+    print(f"[Tool: fetch_log_context] Requesting logs from backend for incident {incident_id}...")
     try:
         response = requests.get(
             f"http://backend:8081/api/context/incident/{incident_id}",
             timeout=15,
         )
+        elapsed = time.time() - start_time
+        print(f"[Tool: fetch_log_context] Backend API returned status {response.status_code} in {elapsed:.2f}s")
         if response.status_code == 200:
             context_map = response.json()
             if not context_map:
@@ -43,4 +48,6 @@ def fetch_log_context(incident_id: str) -> str:
         else:
             return f"Log context API returned HTTP {response.status_code}. No logs available."
     except Exception as e:
+        elapsed = time.time() - start_time
+        print(f"[Tool: fetch_log_context] Backend API call failed in {elapsed:.2f}s: {e}")
         return f"Failed to fetch log context: {e}"

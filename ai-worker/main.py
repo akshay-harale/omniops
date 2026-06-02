@@ -40,6 +40,21 @@ def parse_datadog_config(raw_config_str: str) -> dict:
         pass
     return {"apiKey": raw_config_str}
 
+def get_safe_llm_config_for_log(config: dict) -> dict:
+    """Returns a copy of the config with sensitive fields (keys, secret tokens) masked."""
+    if not config:
+        return {}
+    safe_config = dict(config)
+    for key in list(safe_config.keys()):
+        if any(keyword in key.lower() for keyword in ["key", "secret", "token", "password", "webhook"]):
+            val = safe_config[key]
+            if val:
+                safe_config[key] = f"***masked_len_{len(str(val))}***"
+        elif key.startswith("_"):
+            safe_config[key] = "...omitted..."
+    return safe_config
+
+
 
 def main():
     print("[Worker] Starting OmniOps AI Triage Worker (LangGraph Agent)...")
@@ -49,7 +64,7 @@ def main():
     time.sleep(5)
 
     try:
-        r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
+        r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, socket_timeout=15)
         r.ping()
         print(f"[Worker] Connected to Redis queue at {REDIS_HOST}:{REDIS_PORT}")
     except Exception as e:
@@ -99,6 +114,7 @@ def main():
             if llm_config_str:
                 try:
                     llm_config = json.loads(llm_config_str)
+                    print(f"[Worker] Loaded LLM Config: {get_safe_llm_config_for_log(llm_config)}")
                 except Exception as e:
                     print(f"[Worker] Failed to parse LLM_CONFIG: {e}")
 
@@ -120,8 +136,10 @@ def main():
             if llm_config and teams_webhook:
                 llm_config["_teams_webhook"] = teams_webhook
 
+            agent_mode = llm_config.get("agentMode", "agentic") if llm_config else "legacy-mock"
             print(
                 f"[Worker] Deployment mode: {DEPLOYMENT_MODE} | "
+                f"Agent Mode: {agent_mode} | "
                 f"LLM config: {'found' if llm_config else 'missing'} | "
                 f"DD config: {'found' if dd_config else 'missing'} | "
                 f"SigNoz config: {'found' if signoz_config else 'missing'}"
@@ -172,8 +190,11 @@ def main():
                 send_teams_notification(teams_webhook, incident_id, alert_title, service, summary)
 
             # Write final results
-            write_agent_run(incident_id, reasoning_steps, summary, tokens, "COMPLETED")
+            write_agent_run(incident_id, reasoning_steps, summary, tokens, "COMPLETED", service_name=service)
 
+        except (redis.TimeoutError, TimeoutError):
+            # This is expected when brpop blocks and no new items arrive in the queue
+            continue
         except psycopg2.OperationalError as e:
             print(f"[Worker] DB connection error: {e}. Retrying in 5 seconds...")
             time.sleep(5)

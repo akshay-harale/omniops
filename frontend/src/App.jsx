@@ -104,6 +104,7 @@ export default function App() {
   const [agentEnabled, setAgentEnabled] = useState(true);
   const [targetTeamsChannel, setTargetTeamsChannel] = useState('general');
   const [analysisDepth, setAnalysisDepth] = useState('DEEP'); // 'QUICK' vs 'DEEP'
+  const [agentMode, setAgentMode] = useState('agentic');
   
   // Connection testing for LLM config
   const [testingLlm, setTestingLlm] = useState(false);
@@ -310,6 +311,7 @@ export default function App() {
             if (parsed.agentEnabled !== undefined) setAgentEnabled(parsed.agentEnabled);
             if (parsed.targetTeamsChannel) setTargetTeamsChannel(parsed.targetTeamsChannel);
             if (parsed.analysisDepth) setAnalysisDepth(parsed.analysisDepth);
+            if (parsed.agentMode) setAgentMode(parsed.agentMode);
           } catch (e) {
             console.error("Error parsing LLM Config:", e);
           }
@@ -324,6 +326,7 @@ export default function App() {
           setAgentEnabled(true);
           setTargetTeamsChannel('general');
           setAnalysisDepth('DEEP');
+          setAgentMode('agentic');
         }
       })
       .catch(err => console.error("Error loading integrations:", err));
@@ -498,7 +501,8 @@ export default function App() {
       anthropicModel: anthropicModel,
       agentEnabled: agentEnabled,
       targetTeamsChannel: targetTeamsChannel,
-      analysisDepth: analysisDepth
+      analysisDepth: analysisDepth,
+      agentMode: agentMode
     };
     
     const configStr = JSON.stringify(config);
@@ -1062,6 +1066,8 @@ export default function App() {
               setTargetTeamsChannel={setTargetTeamsChannel}
               analysisDepth={analysisDepth}
               setAnalysisDepth={setAnalysisDepth}
+              agentMode={agentMode}
+              setAgentMode={setAgentMode}
               llmTestResult={llmTestResult}
               testingLlm={testingLlm}
               testLlmConnection={testLlmConnection}

@@ -56,6 +56,8 @@ export default function IntegrationsTab({
   setTargetTeamsChannel,
   analysisDepth,
   setAnalysisDepth,
+  agentMode,
+  setAgentMode,
   llmTestResult,
   testingLlm,
   testLlmConnection,
@@ -666,6 +668,20 @@ export default function IntegrationsTab({
               <option value="DEEP">Deep Log Analysis (Detailed breakdown)</option>
             </select>
           </div>
+        </div>
+
+        {/* Agent Execution Mode */}
+        <div className="flex flex-col gap-1.5">
+          <label className="form-label">Agent Execution Mode</label>
+          <select 
+            value={agentMode} 
+            onChange={(e) => setAgentMode(e.target.value)}
+            className="form-input"
+            style={{ background: '#0a0d17', color: 'white', border: '1px solid var(--border-glass)' }}
+          >
+            <option value="agentic">Agentic Loop (LLM decides when to fetch logs; supports multi-step reasoning)</option>
+            <option value="sequential">Sequential Mode (Consolidated logs are gathered first; LLM evaluates once — FASTER)</option>
+          </select>
         </div>
 
         {/* Connection Test Output */}

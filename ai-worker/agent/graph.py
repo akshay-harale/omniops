@@ -168,17 +168,24 @@ def run_triage(
     }
 
     # Run the graph
+    import time
+    start_time = time.time()
     try:
         final_state = app.invoke(
             initial_state,
             config={"recursion_limit": MAX_TOOL_ITERATIONS * 2 + 5},
         )
+        elapsed = time.time() - start_time
+        print(f"[Graph] Graph execution completed successfully in {elapsed:.2f}s")
+        reasoning_steps = final_state.get("reasoning_steps", [])
+        reasoning_steps.append(f"Node [Graph Completed]: Triage loop finished successfully in {elapsed:.2f}s.")
     except Exception as e:
-        print(f"[Graph] Graph execution failed: {e}")
+        elapsed = time.time() - start_time
+        print(f"[Graph] Graph execution failed in {elapsed:.2f}s: {e}")
         return {
             "reasoning_steps": [
                 f"Node [Extract Entities]: Ingested alert for incident {incident_id}.",
-                f"Node [Agent] ERROR: Graph execution failed: {str(e)[:300]}",
+                f"Node [Agent] ERROR: Graph execution failed in {elapsed:.2f}s: {str(e)[:300]}",
             ],
             "final_summary": f"Triage failed due to an error: {e}",
             "service_name": "unknown-service",
@@ -187,7 +194,7 @@ def run_triage(
         }
 
     return {
-        "reasoning_steps": final_state.get("reasoning_steps", []),
+        "reasoning_steps": reasoning_steps,
         "final_summary": final_state.get("final_summary", "No summary produced."),
         "service_name": final_state.get("service_name", "unknown-service"),
         "alert_title": final_state.get("alert_title", "Unknown Alert"),

@@ -198,6 +198,13 @@ public class SigNozLogProvider implements LogProvider {
                                     sb.append("Stacktrace:\n").append(stacktrace).append("\n");
                                 }
                             }
+                            JsonNode resources = rowData.path("resources_string");
+                            if (!resources.isMissingNode()) {
+                                String serviceName = resources.path("service.name").asText("");
+                                if (!serviceName.isEmpty()) {
+                                    sb.append("Service Name: ").append(serviceName).append("\n");
+                                }
+                            }
                         }
                     }
                 }
@@ -213,6 +220,13 @@ public class SigNozLogProvider implements LogProvider {
                                 String body = itemData.path("body").asText("");
                                 if (!body.isEmpty()) {
                                     sb.append(body).append("\n");
+                                }
+                                JsonNode resources = itemData.path("resources_string");
+                                if (!resources.isMissingNode()) {
+                                    String serviceName = resources.path("service.name").asText("");
+                                    if (!serviceName.isEmpty()) {
+                                        sb.append("Service Name: ").append(serviceName).append("\n");
+                                    }
                                 }
                             }
                         }

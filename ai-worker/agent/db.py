@@ -89,6 +89,7 @@ def write_agent_run(
     final_summary: str,
     tokens_used: int,
     status: str,
+    service_name: str | None = None,
 ) -> None:
     """Upsert agent_run row and update the parent incident status."""
     conn = get_db_connection()
@@ -118,6 +119,22 @@ def write_agent_run(
         )
 
     cur.execute("UPDATE incident SET status = %s WHERE id = %s", (status, incident_id))
+
+    if service_name and service_name != "unknown-service":
+        cur.execute("SELECT payload FROM incident WHERE id = %s", (incident_id,))
+        row = cur.fetchone()
+        if row and row[0]:
+            try:
+                payload = json.loads(row[0])
+                if isinstance(payload, dict):
+                    payload["service"] = service_name
+                    cur.execute(
+                        "UPDATE incident SET payload = %s WHERE id = %s",
+                        (json.dumps(payload), incident_id),
+                    )
+            except Exception as e:
+                print(f"[Worker] Failed to update service name in incident payload: {e}")
+
     conn.commit()
     cur.close()
     conn.close()
